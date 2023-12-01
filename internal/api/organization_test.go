@@ -1,175 +1,200 @@
 package api
 
 import (
-	"context"
-	"reflect"
 	"testing"
 	"time"
 
-	"github.com/google/jsonapi"
+	xjson "github.com/KevinSnyderCodes/OpenAtlas/internal/x/json"
+	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/jsonapi"
 	"github.com/stretchr/testify/require"
 )
 
-var testOrganizationListResponseMarshalStruct = OrganizationListResponse{
-	Items: []*OrganizationListResponseItem{
+var testOrganizationListResponseMarshalJSONStruct = OrganizationListResponse{
+	Data: []*jsonapi.Resource[*OrganizationListResponseResourceAttributes]{
 		{
-			ID:                     "hashicorp",
-			ExternalID:             "org-Hysjx5eUviuKVCJY",
-			CreatedAt:              time.Date(2021, 8, 24, 23, 10, 4, 675000000, time.UTC),
-			Email:                  "hashicorp@example.com",
-			SessionTimeout:         nil,
-			SessionRemember:        nil,
-			CollaboratorAuthPolicy: "password",
-			PlanExpired:            false,
-			PlanExpiresAt:          nil,
-			PlanIsTrial:            false,
-			PlanIsEnterprise:       false,
-			PlanIdentifier:         "developer",
-			CostEstimationEnabled:  true,
-			SendPassingStatusesForUntriggeredSpeculativePlans: true,
-			AllowForceDeleteWorkspaces:                        true,
-			Name:                                              "hashicorp",
-			Permissions: &OrganizationListResponseItemPermissions{
-				CanUpdate:                true,
-				CanDestroy:               true,
-				CanAccessViaTeams:        true,
-				CanCreateModule:          true,
-				CanCreateTeam:            true,
-				CanCreateWorkspace:       true,
-				CanManageUsers:           true,
-				CanManageSubscription:    true,
-				CanManageSSO:             true,
-				CanUpdateOAuth:           true,
-				CanUpdateSentinel:        true,
-				CanUpdateSSHKeys:         true,
-				CanUpdateAPIToken:        true,
-				CanTraverse:              true,
-				CanStartTrial:            true,
-				CanUpdateAgentPools:      true,
-				CanManageTags:            true,
-				CanManageVarsets:         true,
-				CanReadVarsets:           true,
-				CanManagePublicProviders: true,
-				CanCreateProvider:        true,
-				CanManagePublicModules:   true,
-				CanManageCustomProviders: false,
-				CanManageRunTasks:        false,
-				CanReadRunTasks:          false,
-				CanCreateProject:         true,
+			ID:   "hashicorp",
+			Type: "organizations",
+			Attributes: &OrganizationListResponseResourceAttributes{
+				ExternalID:             "org-Hysjx5eUviuKVCJY",
+				CreatedAt:              time.Date(2021, 8, 24, 23, 10, 4, 675000000, time.UTC),
+				Email:                  "hashicorp@example.com",
+				SessionTimeout:         nil,
+				SessionRemember:        nil,
+				CollaboratorAuthPolicy: "password",
+				PlanExpired:            false,
+				PlanExpiresAt:          nil,
+				PlanIsTrial:            false,
+				PlanIsEnterprise:       false,
+				PlanIdentifier:         "developer",
+				CostEstimationEnabled:  true,
+				SendPassingStatusesForUntriggeredSpeculativePlans: true,
+				AllowForceDeleteWorkspaces:                        true,
+				Name:                                              "hashicorp",
+				Permissions: &OrganizationListResponseResourceAttributesPermissions{
+					CanUpdate:                true,
+					CanDestroy:               true,
+					CanAccessViaTeams:        true,
+					CanCreateModule:          true,
+					CanCreateTeam:            true,
+					CanCreateWorkspace:       true,
+					CanManageUsers:           true,
+					CanManageSubscription:    true,
+					CanManageSSO:             true,
+					CanUpdateOAuth:           true,
+					CanUpdateSentinel:        true,
+					CanUpdateSSHKeys:         true,
+					CanUpdateAPIToken:        true,
+					CanTraverse:              true,
+					CanStartTrial:            true,
+					CanUpdateAgentPools:      true,
+					CanManageTags:            true,
+					CanManageVarsets:         true,
+					CanReadVarsets:           true,
+					CanManagePublicProviders: true,
+					CanCreateProvider:        true,
+					CanManagePublicModules:   true,
+					CanManageCustomProviders: false,
+					CanManageRunTasks:        false,
+					CanReadRunTasks:          false,
+					CanCreateProject:         true,
+				},
+				FairRunQueuingEnabled: true,
+				SAMLEnabled:           false,
+				OwnersTeamSAMLRoleID:  nil,
+				TwoFactorConformant:   false,
+				AssessmentsEnforced:   false,
+				DefaultExecutionMode:  "remote",
 			},
-			FairRunQueuingEnabled:           true,
-			SAMLEnabled:                     false,
-			OwnersTeamSAMLRoleID:            nil,
-			TwoFactorConformant:             false,
-			AssessmentsEnforced:             false,
-			DefaultExecutionMode:            "remote",
-			RelationshipDefaultAgentPool:    nil,
-			RelationshipOAuthTokens:         nil,
-			RelationshipAuthenticationToken: nil,
-			RelationshipEntitlementSet: &OrganizationListResponseItemRelationshipEntitlementSet{
-				ID: "org-Hysjx5eUviuKVCJY",
+			Relationships: jsonapi.Relationships{
+				"default-agent-pool": &jsonapi.Relationship{
+					Data: xjson.Null,
+				},
+				"oauth-tokens": &jsonapi.Relationship{
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp/oauth-tokens",
+					},
+				},
+				"authentication-token": &jsonapi.Relationship{
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp/authentication-token",
+					},
+				},
+				"entitlement-set": &jsonapi.Relationship{
+					Data: map[string]string{
+						"id":   "org-Hysjx5eUviuKVCJY",
+						"type": "entitlement-sets",
+					},
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp/entitlement-set",
+					},
+				},
+				"subscription": &jsonapi.Relationship{
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp/subscription",
+					},
+				},
 			},
-			RelationshipSubscription: nil,
-			RelationshipLinksOAuthTokens: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp/oauth-tokens",
-			},
-			RelationshipLinksAuthenticationToken: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp/authentication-token",
-			},
-			RelationshipLinksEntitlementSet: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp/entitlement-set",
-			},
-			RelationshipLinksSubscription: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp/subscription",
-			},
-			Links: &jsonapi.Links{
+			Links: jsonapi.Links{
 				"self": "/api/v2/organizations/hashicorp",
 			},
 		},
 		{
-			ID:                     "hashicorp-two",
-			ExternalID:             "org-iJ5tr4WgB4WpA1hD",
-			CreatedAt:              time.Date(2022, 1, 4, 18, 57, 16, 36000000, time.UTC),
-			Email:                  "hashicorp@example.com",
-			SessionTimeout:         nil,
-			SessionRemember:        nil,
-			CollaboratorAuthPolicy: "password",
-			PlanExpired:            false,
-			PlanExpiresAt:          nil,
-			PlanIsTrial:            false,
-			PlanIsEnterprise:       false,
-			PlanIdentifier:         "free",
-			CostEstimationEnabled:  false,
-			SendPassingStatusesForUntriggeredSpeculativePlans: false,
-			AllowForceDeleteWorkspaces:                        false,
-			Name:                                              "hashicorp-two",
-			Permissions: &OrganizationListResponseItemPermissions{
-				CanUpdate:                true,
-				CanDestroy:               true,
-				CanAccessViaTeams:        true,
-				CanCreateModule:          true,
-				CanCreateTeam:            false,
-				CanCreateWorkspace:       true,
-				CanManageUsers:           true,
-				CanManageSubscription:    true,
-				CanManageSSO:             false,
-				CanUpdateOAuth:           true,
-				CanUpdateSentinel:        false,
-				CanUpdateSSHKeys:         true,
-				CanUpdateAPIToken:        true,
-				CanTraverse:              true,
-				CanStartTrial:            true,
-				CanUpdateAgentPools:      false,
-				CanManageTags:            true,
-				CanManageVarsets:         true,
-				CanReadVarsets:           true,
-				CanManagePublicProviders: true,
-				CanCreateProvider:        true,
-				CanManagePublicModules:   true,
-				CanManageCustomProviders: false,
-				CanManageRunTasks:        false,
-				CanReadRunTasks:          false,
-				CanCreateProject:         false,
+			ID:   "hashicorp-two",
+			Type: "organizations",
+			Attributes: &OrganizationListResponseResourceAttributes{
+				ExternalID:             "org-iJ5tr4WgB4WpA1hD",
+				CreatedAt:              time.Date(2022, 1, 4, 18, 57, 16, 36000000, time.UTC),
+				Email:                  "hashicorp@example.com",
+				SessionTimeout:         nil,
+				SessionRemember:        nil,
+				CollaboratorAuthPolicy: "password",
+				PlanExpired:            false,
+				PlanExpiresAt:          nil,
+				PlanIsTrial:            false,
+				PlanIsEnterprise:       false,
+				PlanIdentifier:         "free",
+				CostEstimationEnabled:  false,
+				SendPassingStatusesForUntriggeredSpeculativePlans: false,
+				AllowForceDeleteWorkspaces:                        false,
+				Name:                                              "hashicorp-two",
+				Permissions: &OrganizationListResponseResourceAttributesPermissions{
+					CanUpdate:                true,
+					CanDestroy:               true,
+					CanAccessViaTeams:        true,
+					CanCreateModule:          true,
+					CanCreateTeam:            false,
+					CanCreateWorkspace:       true,
+					CanManageUsers:           true,
+					CanManageSubscription:    true,
+					CanManageSSO:             false,
+					CanUpdateOAuth:           true,
+					CanUpdateSentinel:        false,
+					CanUpdateSSHKeys:         true,
+					CanUpdateAPIToken:        true,
+					CanTraverse:              true,
+					CanStartTrial:            true,
+					CanUpdateAgentPools:      false,
+					CanManageTags:            true,
+					CanManageVarsets:         true,
+					CanReadVarsets:           true,
+					CanManagePublicProviders: true,
+					CanCreateProvider:        true,
+					CanManagePublicModules:   true,
+					CanManageCustomProviders: false,
+					CanManageRunTasks:        false,
+					CanReadRunTasks:          false,
+					CanCreateProject:         false,
+				},
+				FairRunQueuingEnabled: true,
+				SAMLEnabled:           false,
+				OwnersTeamSAMLRoleID:  nil,
+				TwoFactorConformant:   false,
+				AssessmentsEnforced:   false,
+				DefaultExecutionMode:  "remote",
 			},
-			FairRunQueuingEnabled:           true,
-			SAMLEnabled:                     false,
-			OwnersTeamSAMLRoleID:            nil,
-			TwoFactorConformant:             false,
-			AssessmentsEnforced:             false,
-			DefaultExecutionMode:            "remote",
-			RelationshipDefaultAgentPool:    nil,
-			RelationshipOAuthTokens:         nil,
-			RelationshipAuthenticationToken: nil,
-			RelationshipEntitlementSet: &OrganizationListResponseItemRelationshipEntitlementSet{
-				ID: "org-iJ5tr4WgB4WpA1hD",
+			Relationships: jsonapi.Relationships{
+				"default-agent-pool": &jsonapi.Relationship{
+					Data: xjson.Null,
+				},
+				"oauth-tokens": &jsonapi.Relationship{
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp-two/oauth-tokens",
+					},
+				},
+				"authentication-token": &jsonapi.Relationship{
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp-two/authentication-token",
+					},
+				},
+				"entitlement-set": &jsonapi.Relationship{
+					Data: map[string]string{
+						"id":   "org-iJ5tr4WgB4WpA1hD",
+						"type": "entitlement-sets",
+					},
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp-two/entitlement-set",
+					},
+				},
+				"subscription": &jsonapi.Relationship{
+					Links: jsonapi.Links{
+						"related": "/api/v2/organizations/hashicorp-two/subscription",
+					},
+				},
 			},
-			RelationshipSubscription: nil,
-			RelationshipLinksOAuthTokens: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp-two/oauth-tokens",
-			},
-			RelationshipLinksAuthenticationToken: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp-two/authentication-token",
-			},
-			RelationshipLinksEntitlementSet: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp-two/entitlement-set",
-			},
-			RelationshipLinksSubscription: &jsonapi.Links{
-				"related": "/api/v2/organizations/hashicorp-two/subscription",
-			},
-			Links: &jsonapi.Links{
+			Links: jsonapi.Links{
 				"self": "/api/v2/organizations/hashicorp-two",
 			},
 		},
 	},
-	Links: &jsonapi.Links{
+	Links: jsonapi.Links{
 		"self":  "https://tfe-zone-b0c8608c.ngrok.io/api/v2/organizations?page%5Bnumber%5D=1&page%5Bsize%5D=20",
 		"first": "https://tfe-zone-b0c8608c.ngrok.io/api/v2/organizations?page%5Bnumber%5D=1&page%5Bsize%5D=20",
 		"prev":  nil,
 		"next":  nil,
 		"last":  "https://tfe-zone-b0c8608c.ngrok.io/api/v2/organizations?page%5Bnumber%5D=1&page%5Bsize%5D=20",
 	},
-	Meta: &jsonapi.Meta{
-		"pagination": map[string]interface{}{
+	Meta: jsonapi.Meta{
+		"pagination": map[string]any{
 			"current-page": 1,
 			"page-size":    20,
 			"prev-page":    nil,
@@ -379,57 +404,45 @@ const testOrganizationListResponseMarshalWant = `
 }
 `
 
-func TestDefaultOrganizations_List(t *testing.T) {
-	type args struct {
-		ctx context.Context
-		req *OrganizationListRequest
-	}
+func TestOrganizationListResponse_MarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		s       *DefaultOrganizations
-		args    args
-		want    *OrganizationListResponse
+		o       *OrganizationListResponse
+		want    []byte
+		wantErr bool
+	}{
+		{
+			name: "success",
+			o:    &testOrganizationListResponseMarshalJSONStruct,
+			want: []byte(testOrganizationListResponseMarshalWant),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.o.MarshalJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("OrganizationListResponse.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			require.JSONEq(t, string(tt.want), string(got))
+		})
+	}
+}
+
+func TestOrganizationListResponse_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		o       *OrganizationListResponse
 		wantErr bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &DefaultOrganizations{}
-			got, err := s.List(tt.args.ctx, tt.args.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("DefaultOrganizations.List() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if err := tt.o.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("OrganizationListResponse.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DefaultOrganizations.List() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestOrganizationListResponse_Marshal(t *testing.T) {
-	tests := []struct {
-		name    string
-		s       *OrganizationListResponse
-		want    []byte
-		wantErr bool
-	}{
-		{
-			name: "success",
-			s:    &testOrganizationListResponseMarshalStruct,
-			want: []byte(testOrganizationListResponseMarshalWant),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.Marshal()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("OrganizationListResponse.Marshal() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			require.JSONEq(t, string(tt.want), string(got))
 		})
 	}
 }

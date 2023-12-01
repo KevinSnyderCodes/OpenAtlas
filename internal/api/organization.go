@@ -1,11 +1,11 @@
 package api
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"time"
 
-	"github.com/google/jsonapi"
+	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/jsonapi"
 )
 
 var _ Organizations = (*DefaultOrganizations)(nil)
@@ -19,87 +19,57 @@ type OrganizationListRequest struct {
 	// TODO: Populate
 }
 
-// https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organizations#sample-response
-type OrganizationListResponse struct {
-	Items []*OrganizationListResponseItem
-	Links *jsonapi.Links
-	Meta  *jsonapi.Meta
-}
+type OrganizationListResponse jsonapi.Document[[]*jsonapi.Resource[*OrganizationListResponseResourceAttributes], OrganizationListResponseResourceAttributes]
 
-func (s *OrganizationListResponse) JSONAPIItems() interface{} {
-	return s.Items
-}
+func (o *OrganizationListResponse) MarshalJSON() ([]byte, error) {
+	type Alias OrganizationListResponse
 
-func (s *OrganizationListResponse) JSONAPILinks() *jsonapi.Links {
-	return s.Links
-}
-
-func (s *OrganizationListResponse) JSONAPIMeta() *jsonapi.Meta {
-	return s.Meta
-}
-
-// https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organizations#sample-response
-type OrganizationListResponseItem struct {
-	ID string `jsonapi:"primary,organizations"`
-
-	ExternalID                                        string                                   `jsonapi:"attr,external-id"`
-	CreatedAt                                         time.Time                                `jsonapi:"attr,created-at,iso8601milli"`
-	Email                                             string                                   `jsonapi:"attr,email"`
-	SessionTimeout                                    any                                      `jsonapi:"attr,session-timeout"`
-	SessionRemember                                   any                                      `jsonapi:"attr,session-remember"`
-	CollaboratorAuthPolicy                            string                                   `jsonapi:"attr,collaborator-auth-policy"`
-	PlanExpired                                       bool                                     `jsonapi:"attr,plan-expired"`
-	PlanExpiresAt                                     any                                      `jsonapi:"attr,plan-expires-at"`
-	PlanIsTrial                                       bool                                     `jsonapi:"attr,plan-is-trial"`
-	PlanIsEnterprise                                  bool                                     `jsonapi:"attr,plan-is-enterprise"`
-	PlanIdentifier                                    string                                   `jsonapi:"attr,plan-identifier"`
-	CostEstimationEnabled                             bool                                     `jsonapi:"attr,cost-estimation-enabled"`
-	SendPassingStatusesForUntriggeredSpeculativePlans bool                                     `jsonapi:"attr,send-passing-statuses-for-untriggered-speculative-plans"`
-	AllowForceDeleteWorkspaces                        bool                                     `jsonapi:"attr,allow-force-delete-workspaces"`
-	Name                                              string                                   `jsonapi:"attr,name"`
-	Permissions                                       *OrganizationListResponseItemPermissions `jsonapi:"attr,permissions"`
-	FairRunQueuingEnabled                             bool                                     `jsonapi:"attr,fair-run-queuing-enabled"`
-	SAMLEnabled                                       bool                                     `jsonapi:"attr,saml-enabled"`
-	OwnersTeamSAMLRoleID                              any                                      `jsonapi:"attr,owners-team-saml-role-id"`
-	TwoFactorConformant                               bool                                     `jsonapi:"attr,two-factor-conformant"`
-	AssessmentsEnforced                               bool                                     `jsonapi:"attr,assessments-enforced"`
-	DefaultExecutionMode                              string                                   `jsonapi:"attr,default-execution-mode"`
-
-	RelationshipDefaultAgentPool    any                                                     `jsonapi:"relation,default-agent-pool"`
-	RelationshipOAuthTokens         any                                                     `jsonapi:"relation,oauth-tokens,omitempty"`
-	RelationshipAuthenticationToken any                                                     `jsonapi:"relation,authentication-token,omitempty"`
-	RelationshipEntitlementSet      *OrganizationListResponseItemRelationshipEntitlementSet `jsonapi:"relation,entitlement-set"`
-	RelationshipSubscription        any                                                     `jsonapi:"relation,subscription,omitempty"`
-
-	RelationshipLinksOAuthTokens         *jsonapi.Links
-	RelationshipLinksAuthenticationToken *jsonapi.Links
-	RelationshipLinksEntitlementSet      *jsonapi.Links
-	RelationshipLinksSubscription        *jsonapi.Links
-
-	Links *jsonapi.Links
-}
-
-func (s *OrganizationListResponseItem) JSONAPIRelationshipLinks(relation string) *jsonapi.Links {
-	switch relation {
-	case "oauth-tokens":
-		return s.RelationshipLinksOAuthTokens
-	case "authentication-token":
-		return s.RelationshipLinksAuthenticationToken
-	case "entitlement-set":
-		return s.RelationshipLinksEntitlementSet
-	case "subscription":
-		return s.RelationshipLinksSubscription
-	default:
-		return nil
+	data, err := json.Marshal((*Alias)(o))
+	if err != nil {
+		return nil, err
 	}
+
+	return data, nil
 }
 
-func (s *OrganizationListResponseItem) JSONAPILinks() *jsonapi.Links {
-	return s.Links
+func (o *OrganizationListResponse) Validate() error {
+	v := (*jsonapi.Document[[]*jsonapi.Resource[*OrganizationListResponseResourceAttributes], OrganizationListResponseResourceAttributes])(o)
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organizations#sample-response
-type OrganizationListResponseItemPermissions struct {
+type OrganizationListResponseResourceAttributes struct {
+	ExternalID                                        string                                                 `json:"external-id"`
+	CreatedAt                                         time.Time                                              `json:"created-at"`
+	Email                                             string                                                 `json:"email"`
+	SessionTimeout                                    any                                                    `json:"session-timeout"`
+	SessionRemember                                   any                                                    `json:"session-remember"`
+	CollaboratorAuthPolicy                            string                                                 `json:"collaborator-auth-policy"`
+	PlanExpired                                       bool                                                   `json:"plan-expired"`
+	PlanExpiresAt                                     any                                                    `json:"plan-expires-at"`
+	PlanIsTrial                                       bool                                                   `json:"plan-is-trial"`
+	PlanIsEnterprise                                  bool                                                   `json:"plan-is-enterprise"`
+	PlanIdentifier                                    string                                                 `json:"plan-identifier"`
+	CostEstimationEnabled                             bool                                                   `json:"cost-estimation-enabled"`
+	SendPassingStatusesForUntriggeredSpeculativePlans bool                                                   `json:"send-passing-statuses-for-untriggered-speculative-plans"`
+	AllowForceDeleteWorkspaces                        bool                                                   `json:"allow-force-delete-workspaces"`
+	Name                                              string                                                 `json:"name"`
+	Permissions                                       *OrganizationListResponseResourceAttributesPermissions `json:"permissions"`
+	FairRunQueuingEnabled                             bool                                                   `json:"fair-run-queuing-enabled"`
+	SAMLEnabled                                       bool                                                   `json:"saml-enabled"`
+	OwnersTeamSAMLRoleID                              any                                                    `json:"owners-team-saml-role-id"`
+	TwoFactorConformant                               bool                                                   `json:"two-factor-conformant"`
+	AssessmentsEnforced                               bool                                                   `json:"assessments-enforced"`
+	DefaultExecutionMode                              string                                                 `json:"default-execution-mode"`
+}
+
+// https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organizations#sample-response
+type OrganizationListResponseResourceAttributesPermissions struct {
 	CanUpdate                bool `json:"can-update"`
 	CanDestroy               bool `json:"can-destroy"`
 	CanAccessViaTeams        bool `json:"can-access-via-teams"`
@@ -126,21 +96,6 @@ type OrganizationListResponseItemPermissions struct {
 	CanManageRunTasks        bool `json:"can-manage-run-tasks"`
 	CanReadRunTasks          bool `json:"can-read-run-tasks"`
 	CanCreateProject         bool `json:"can-create-project"`
-}
-
-// https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organizations#sample-response
-type OrganizationListResponseItemRelationshipEntitlementSet struct {
-	ID string `jsonapi:"primary,entitlement-sets"`
-}
-
-func (s *OrganizationListResponse) Marshal() ([]byte, error) {
-	var buf bytes.Buffer
-
-	if err := jsonapi.MarshalPayloadWithoutIncluded(&buf, s); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }
 
 type DefaultOrganizations struct{}
