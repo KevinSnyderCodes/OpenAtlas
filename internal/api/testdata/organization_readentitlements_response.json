@@ -1,0 +1,35 @@
+{
+  "data": {
+    "id": "org-Bzyc2JuegvVLAibn",
+    "type": "entitlement-sets",
+    "attributes": {
+      "cost-estimation": false,
+      "configuration-designer": true,
+      "module-tests-generation": false,
+      "operations": true,
+      "private-module-registry": true,
+      "policy-enforcement": false,
+      "sentinel": false,
+      "run-tasks": false,
+      "state-storage": true,
+      "teams": false,
+      "vcs-integrations": true,
+      "usage-reporting": false,
+      "user-limit": 5,
+      "self-serve-billing": true,
+      "audit-logging": false,
+      "agents": false,
+      "sso": false,
+      "run-task-limit": 1,
+      "run-task-workspace-limit": 10,
+      "run-task-mandatory-enforcement-limit": 1,
+      "policy-set-limit": 1,
+      "policy-limit": 5,
+      "policy-mandatory-enforcement-limit": null,
+      "versioned-policy-set-limit": null
+    },
+    "links": {
+      "self": "/api/v2/entitlement-sets/org-Bzyc2JuegvVLAibn"
+    }
+  }
+}
