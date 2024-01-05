@@ -14,7 +14,7 @@ var testRunReadResponseMarshalJSONStruct = RunReadResponse{
 		ID:   "run-CZcmD7eagjhyX0vN",
 		Type: "runs",
 		Attributes: &RunReadResponseResourceAttributes{
-			Actions: &RunReadResponseResourceAttributesActions{
+			Actions: &RunResourceAttributesActions{
 				IsCancelable:      true,
 				IsConfirmable:     false,
 				IsDiscardable:     false,
@@ -30,13 +30,13 @@ var testRunReadResponseMarshalJSONStruct = RunReadResponse{
 			Message:               "Custom message",
 			PlanOnly:              false,
 			Source:                "tfe-api",
-			StatusTimestamps: &RunReadResponseResourceAttributesStatusTimestamps{
+			StatusTimestamps: &RunResourceAttributesStatusTimestamps{
 				PlanQueueableAt: TimeRFC3339Plus(time.Date(2021, 5, 24, 7, 38, 4, 0, time.UTC)),
 			},
 			Status:        "pending",
 			TriggerReason: "manual",
 			TargetAddrs:   nil,
-			Permissions: &RunReadResponseResourceAttributesPermissions{
+			Permissions: &RunResourceAttributesPermissions{
 				CanApply:               true,
 				CanCancel:              true,
 				CanComment:             true,

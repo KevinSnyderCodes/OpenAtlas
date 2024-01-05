@@ -3,10 +3,14 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/jsonapi"
 )
+
+const defaultWorkspaceName = "default"
+const defaultWorkspaceID = "ws-0000000000000000"
 
 var _ Workspaces = (*DefaultWorkspaces)(nil)
 
@@ -211,11 +215,23 @@ func (o *WorkspaceCreateResponse) MarshalJSON() ([]byte, error) {
 type DefaultWorkspaces struct{}
 
 func (o *DefaultWorkspaces) Read(ctx context.Context, organization string, workspace string) (*WorkspaceReadResponse, error) {
+	if organization != defaultOrganizationName {
+		return nil, fmt.Errorf("organization not found: %s", organization)
+	}
+	if workspace != defaultWorkspaceName {
+		return nil, fmt.Errorf("workspace not found: %s", workspace)
+	}
+
 	return &WorkspaceReadResponse{
 		Data: &jsonapi.Resource[*WorkspaceReadResponseResourceAttributes]{
-			ID:         workspace,
-			Type:       "workspaces",
-			Attributes: &WorkspaceReadResponseResourceAttributes{},
+			ID:   defaultWorkspaceID,
+			Type: "workspaces",
+			Attributes: &WorkspaceReadResponseResourceAttributes{
+				Name: workspace,
+				Permissions: &WorkspaceReadResponseResourceAttributesPermissions{
+					CanQueueRun: true,
+				},
+			},
 		},
 	}, nil
 }
