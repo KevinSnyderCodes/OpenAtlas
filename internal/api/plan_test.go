@@ -10,11 +10,11 @@ import (
 )
 
 var testPlanReadResponseMarshalJSONStruct = PlanReadResponse{
-	Data: &jsonapi.Resource[*PlanReadResponseResourceAttributes]{
+	Data: &jsonapi.Resource[*PlanResourceAttributes]{
 		ID:   "plan-8F5JFydVYAmtTjET",
 		Type: "plans",
-		Attributes: &PlanReadResponseResourceAttributes{
-			ExecutionDetails: &PlanReadResponseResourceAttributesExecutionDetails{
+		Attributes: &PlanResourceAttributes{
+			ExecutionDetails: &PlanResourceAttributesExecutionDetails{
 				Mode: "remote",
 			},
 			GeneratedConfiguration: false,
@@ -24,7 +24,7 @@ var testPlanReadResponseMarshalJSONStruct = PlanReadResponse{
 			ResourceDestructions:   0,
 			ResourceImports:        0,
 			Status:                 "finished",
-			StatusTimestamps: &PlanReadResponseResourceAttributesStatusTimestamps{
+			StatusTimestamps: &PlanResourceAttributesStatusTimestamps{
 				QueuedAt:   TimeRFC3339Plus(time.Date(2018, 7, 2, 22, 29, 53, 0, time.UTC)),
 				PendingAt:  TimeRFC3339Plus(time.Date(2018, 7, 2, 22, 29, 53, 0, time.UTC)),
 				StartedAt:  TimeRFC3339Plus(time.Date(2018, 7, 2, 22, 29, 54, 0, time.UTC)),

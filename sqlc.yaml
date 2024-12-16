@@ -1,0 +1,23 @@
+version: "2"
+sql:
+  - engine: postgresql
+    queries: db/queries
+    schema: db/migrations
+    gen:
+      go:
+        package: db
+        out: internal/db
+        sql_package: pgx/v5
+        rename:
+          upload_url: UploadURL
+overrides:
+  go:
+    rename:
+      tfe_configuration_version: TFEConfigurationVersion
+      tfe_configuration_version_status: TFEConfigurationVersionStatus
+      tfe_configuration_version_status_pending: TFEConfigurationVersionStatusPending
+      tfe_configuration_version_status_uploaded: TFEConfigurationVersionStatusUploaded
+      tfe_plan: TFEPlan
+      tfe_plan_status: TFEPlanStatus
+      tfe_run: TFERun
+      tfe_run_status: TFERunStatus

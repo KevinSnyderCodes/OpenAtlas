@@ -5,19 +5,35 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/KevinSnyderCodes/OpenAtlas/internal/db"
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/jsonapi"
 )
+
+const defaultOrganizationName = "default"
+const defaultOrganizationID = "org-0000000000000000"
 
 var _ Organizations = (*DefaultOrganizations)(nil)
 
 type Organizations interface {
 	ReadEntitlements(ctx context.Context, organization string) (*OrganizationReadEntitlementsResponse, error)
+	ReadRunQueue(ctx context.Context, organization string) (*OrganizationReadRunQueueResponse, error)
 }
 
 type OrganizationReadEntitlementsResponse jsonapi.Document[
 	*jsonapi.Resource[*OrganizationReadEntitlementsResponseResourceAttributes],
 	OrganizationReadEntitlementsResponseResourceAttributes,
 ]
+
+func (o *OrganizationReadEntitlementsResponse) MarshalJSON() ([]byte, error) {
+	type Alias OrganizationReadEntitlementsResponse
+
+	data, err := json.Marshal((*Alias)(o))
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
 
 type OrganizationReadEntitlementsResponseResourceAttributes struct {
 	CostEstimation                   bool `json:"cost-estimation"`
@@ -46,8 +62,10 @@ type OrganizationReadEntitlementsResponseResourceAttributes struct {
 	VersionedPolicySetLimit          any  `json:"versioned-policy-set-limit"`
 }
 
-func (o *OrganizationReadEntitlementsResponse) MarshalJSON() ([]byte, error) {
-	type Alias OrganizationReadEntitlementsResponse
+type OrganizationReadRunQueueResponse RunListResponse
+
+func (o *OrganizationReadRunQueueResponse) MarshalJSON() ([]byte, error) {
+	type Alias OrganizationReadRunQueueResponse
 
 	data, err := json.Marshal((*Alias)(o))
 	if err != nil {
@@ -57,12 +75,28 @@ func (o *OrganizationReadEntitlementsResponse) MarshalJSON() ([]byte, error) {
 	return data, nil
 }
 
-type DefaultOrganizations struct{}
+type OrganizationsDB interface {
+	ListTFERuns(ctx context.Context) ([]db.TFERun, error)
+}
+
+type DefaultOrganizations struct {
+	db OrganizationsDB
+}
+
+func NewDefaultOrganization(db OrganizationsDB) *DefaultOrganizations {
+	return &DefaultOrganizations{
+		db: db,
+	}
+}
 
 func (o *DefaultOrganizations) ReadEntitlements(ctx context.Context, organization string) (*OrganizationReadEntitlementsResponse, error) {
+	if organization != defaultOrganizationName {
+		return nil, fmt.Errorf("organization not found: %s", organization)
+	}
+
 	return &OrganizationReadEntitlementsResponse{
 		Data: &jsonapi.Resource[*OrganizationReadEntitlementsResponseResourceAttributes]{
-			ID:   organization,
+			ID:   defaultOrganizationID,
 			Type: "entitlement-sets",
 			Attributes: &OrganizationReadEntitlementsResponseResourceAttributes{
 				Operations: true,
@@ -72,4 +106,17 @@ func (o *DefaultOrganizations) ReadEntitlements(ctx context.Context, organizatio
 			},
 		},
 	}, nil
+}
+
+func (o *DefaultOrganizations) ReadRunQueue(ctx context.Context, organization string) (*OrganizationReadRunQueueResponse, error) {
+	if organization != defaultOrganizationName {
+		return nil, fmt.Errorf("organization not found: %s", organization)
+	}
+
+	rows, err := o.db.ListTFERuns(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error listing runs: %w", err)
+	}
+
+	return (*OrganizationReadRunQueueResponse)((TFERuns)(rows).RunListResponse()), nil
 }
