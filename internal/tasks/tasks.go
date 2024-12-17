@@ -7,6 +7,7 @@ import (
 
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/api"
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/db"
+	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/id"
 	"github.com/hibiken/asynq"
 )
 
@@ -47,12 +48,17 @@ func (o *Handler) HandleRunProcessTask(ctx context.Context, task *asynq.Task) er
 
 	// TODO: Implement
 
-	runID := api.RunExternalID(payload.ID).InternalID().String()
+	runID, err := id.NewRunIDFromExternalID(payload.ID)
+	if err != nil {
+		return fmt.Errorf("error creating run id from external id: %w", err)
+	}
+
+	runInternalID := runID.InternalID()
 
 	{
 		arg := db.CreateTFEPlanParams{
 			ID:         api.GenerateID(),
-			RunID:      runID,
+			RunID:      runInternalID,
 			Status:     db.TfePlanStatusErrored,
 			LogReadUrl: "", // TODO: Populate
 		}
@@ -63,7 +69,7 @@ func (o *Handler) HandleRunProcessTask(ctx context.Context, task *asynq.Task) er
 
 	{
 		arg := db.UpdateTFERunStatusParams{
-			ID:     runID,
+			ID:     runInternalID,
 			Status: db.TfeRunStatusErrored,
 		}
 		if _, err := o.queries.UpdateTFERunStatus(ctx, arg); err != nil {

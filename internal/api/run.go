@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/db"
+	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/id"
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/jsonapi"
 )
 
@@ -103,7 +104,7 @@ type RunCreateRequest jsonapi.Document[
 	RunCreateRequestResourceAttributes,
 ]
 
-func (o *RunCreateRequest) ConfigurationVersionID() string {
+func (o *RunCreateRequest) GetConfigurationVersionExternalID() string {
 	data, ok := (o.Data.Relationships["configuration-version"].Data).(map[string]any)
 	if !ok {
 		return ""
@@ -155,17 +156,37 @@ type TFERunDB interface {
 
 type TFERun db.TFERun
 
-func (o TFERun) RunExternalID() StrongExternalID {
-	return RunInternalID(o.ID).ExternalID()
+func (o TFERun) GetRunID() (id.RunID, error) {
+	v, err := id.NewRunIDFromInternalID(o.ID)
+	if err != nil {
+		return v, fmt.Errorf("error creating run id: %w", err)
+	}
+
+	return v, nil
 }
 
-func (o TFERun) ConfigurationVersionExternalID() StrongExternalID {
-	return ConfigurationVersionInternalID(o.ConfigurationVersionID).ExternalID()
+func (o TFERun) GetConfigurationVersionID() (id.ConfigurationVersionID, error) {
+	v, err := id.NewConfigurationVersionIDFromInternalID(o.ConfigurationVersionID)
+	if err != nil {
+		return v, fmt.Errorf("error creating configuration version id: %w", err)
+	}
+
+	return v, nil
 }
 
-func (o TFERun) RunResource() *jsonapi.Resource[*RunResourceAttributes] {
+func (o TFERun) GetRunResource() (*jsonapi.Resource[*RunResourceAttributes], error) {
+	runID, err := o.GetRunID()
+	if err != nil {
+		return nil, fmt.Errorf("error getting run id: %w", err)
+	}
+
+	configurationVersionID, err := o.GetConfigurationVersionID()
+	if err != nil {
+		return nil, fmt.Errorf("error getting configuration version id: %w", err)
+	}
+
 	return &jsonapi.Resource[*RunResourceAttributes]{
-		ID:   o.RunExternalID().String(),
+		ID:   runID.ExternalID(),
 		Type: "runs",
 		Attributes: &RunResourceAttributes{
 			Status: string(o.Status),
@@ -174,7 +195,7 @@ func (o TFERun) RunResource() *jsonapi.Resource[*RunResourceAttributes] {
 			"configuration-version": &jsonapi.Relationship{
 				Data: map[string]string{
 					"type": "configuration-versions",
-					"id":   o.ConfigurationVersionExternalID().String(),
+					"id":   configurationVersionID.ExternalID(),
 				},
 			},
 			"plan": &jsonapi.Relationship{
@@ -184,27 +205,37 @@ func (o TFERun) RunResource() *jsonapi.Resource[*RunResourceAttributes] {
 				},
 			},
 		},
-	}
+	}, nil
 }
 
-func (o TFERun) RunDocument() *RunDocument {
-	return &RunDocument{
-		Data: o.RunResource(),
+func (o TFERun) GetRunDocument() (*RunDocument, error) {
+	data, err := o.GetRunResource()
+	if err != nil {
+		return nil, fmt.Errorf("error getting run resource: %w", err)
 	}
+
+	return &RunDocument{
+		Data: data,
+	}, nil
 }
 
 type TFERuns []db.TFERun
 
-func (o TFERuns) RunListResponse() *RunListResponse {
+func (o TFERuns) GetRunListResponse() (*RunListResponse, error) {
 	resources := make([]*jsonapi.Resource[*RunResourceAttributes], len(o))
 
 	for i, row := range o {
-		resources[i] = (TFERun)(row).RunResource()
+		item, err := (TFERun)(row).GetRunResource()
+		if err != nil {
+			return nil, fmt.Errorf("error getting run resource: %w", err)
+		}
+
+		resources[i] = item
 	}
 
 	return &RunListResponse{
 		Data: resources,
-	}
+	}, nil
 }
 
 type DefaultRuns struct {
@@ -217,20 +248,23 @@ func NewDefaultRuns(db TFERunDB) *DefaultRuns {
 	}
 }
 
-func (o *DefaultRuns) Read(ctx context.Context, runID string) (*RunDocument, error) {
-	runExternalID := RunExternalID(runID)
-	if err := runExternalID.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating run id: %w", err)
+func (o *DefaultRuns) Read(ctx context.Context, runExternalID string) (*RunDocument, error) {
+	runID, err := id.NewRunIDFromExternalID(runExternalID)
+	if err != nil {
+		return nil, fmt.Errorf("error creating run id: %w", err)
 	}
 
-	runInternalID := runExternalID.InternalID().String()
+	runInternalID := runID.InternalID()
 
 	row, err := o.db.GetTFERun(ctx, runInternalID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting run by external id: %w", err)
+		return nil, fmt.Errorf("error getting run: %w", err)
 	}
 
-	resp := (TFERun)(row).RunDocument()
+	resp, err := (TFERun)(row).GetRunDocument()
+	if err != nil {
+		return nil, fmt.Errorf("error getting run document: %w", err)
+	}
 
 	{
 		row, err := o.db.GetTFEPlanByRunID(ctx, runInternalID)
@@ -238,22 +272,27 @@ func (o *DefaultRuns) Read(ctx context.Context, runID string) (*RunDocument, err
 			return nil, fmt.Errorf("error getting plan by run id: %w", err)
 		}
 
+		planID, err := id.NewPlanIDFromInternalID(row.ID)
+		if err != nil {
+			return nil, fmt.Errorf("error creating plan id: %w", err)
+		}
+
 		resp.Data.Relationships["plan"].Data = map[string]string{
 			"type": "plans",
-			"id":   PlanInternalID(row.ID).ExternalID().String(),
+			"id":   planID.ExternalID(),
 		}
 	}
 
 	return resp, nil
 }
 
-func (o *DefaultRuns) List(ctx context.Context, workspaceID string) (*RunListResponse, error) {
-	workspaceExternalID := WorkspaceExternalID(workspaceID)
-	if err := workspaceExternalID.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating workspace id: %w", err)
+func (o *DefaultRuns) List(ctx context.Context, workspaceExternalID string) (*RunListResponse, error) {
+	workspaceID, err := id.NewWorkspaceIDFromExternalID(workspaceExternalID)
+	if err != nil {
+		return nil, fmt.Errorf("error creating workspace id: %w", err)
 	}
 
-	if workspaceID != defaultWorkspaceID {
+	if workspaceID.ExternalID() != defaultWorkspaceID {
 		return nil, fmt.Errorf("workspace not found: %s", workspaceID)
 	}
 
@@ -262,20 +301,25 @@ func (o *DefaultRuns) List(ctx context.Context, workspaceID string) (*RunListRes
 		return nil, fmt.Errorf("error listing runs: %w", err)
 	}
 
-	return (TFERuns)(rows).RunListResponse(), nil
+	resp, err := (TFERuns)(rows).GetRunListResponse()
+	if err != nil {
+		return nil, fmt.Errorf("error getting run list response: %w", err)
+	}
+
+	return resp, nil
 }
 
 func (o *DefaultRuns) Create(ctx context.Context, req *RunCreateRequest) (*RunDocument, error) {
-	configurationVersionID := req.ConfigurationVersionID()
+	configurationVersionExternalID := req.GetConfigurationVersionExternalID()
 
-	configurationVersionExternalID := ConfigurationVersionExternalID(configurationVersionID)
-	if err := configurationVersionExternalID.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating configuration version id: %w", err)
+	configurationVersionID, err := id.NewConfigurationVersionIDFromExternalID(configurationVersionExternalID)
+	if err != nil {
+		return nil, fmt.Errorf("error creating configuration version id: %w", err)
 	}
 
 	arg := db.CreateTFERunParams{
 		ID:                     GenerateID(),
-		ConfigurationVersionID: configurationVersionExternalID.InternalID().String(),
+		ConfigurationVersionID: configurationVersionID.InternalID(),
 		Status:                 db.TfeRunStatusPending,
 	}
 	row, err := o.db.CreateTFERun(ctx, arg)
@@ -283,7 +327,10 @@ func (o *DefaultRuns) Create(ctx context.Context, req *RunCreateRequest) (*RunDo
 		return nil, fmt.Errorf("error creating run: %w", err)
 	}
 
-	resp := (TFERun)(row).RunDocument()
+	resp, err := (TFERun)(row).GetRunDocument()
+	if err != nil {
+		return nil, fmt.Errorf("error getting run document: %w", err)
+	}
 
 	return resp, nil
 }
