@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/db"
+	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/id"
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/jsonapi"
 )
 
@@ -65,17 +66,37 @@ type TFEPlanDB interface {
 
 type TFEPlan db.TFEPlan
 
-func (o TFEPlan) PlanExternalID() PlanExternalID {
-	return PlanExternalID(o.ID)
+func (o TFEPlan) GetPlanID() (id.PlanID, error) {
+	v, err := id.NewPlanIDFromInternalID(o.ID)
+	if err != nil {
+		return v, fmt.Errorf("error creating plan id: %w", err)
+	}
+
+	return v, nil
 }
 
-func (o TFEPlan) RunExternalID() RunExternalID {
-	return RunExternalID(o.RunID)
+func (o TFEPlan) GetRunID() (id.RunID, error) {
+	v, err := id.NewRunIDFromInternalID(o.RunID)
+	if err != nil {
+		return v, fmt.Errorf("error creating run id: %w", err)
+	}
+
+	return v, nil
 }
 
-func (o TFEPlan) PlanResource() *jsonapi.Resource[*PlanResourceAttributes] {
+func (o TFEPlan) GetPlanResource() (*jsonapi.Resource[*PlanResourceAttributes], error) {
+	planID, err := o.GetPlanID()
+	if err != nil {
+		return nil, fmt.Errorf("error getting plan id: %w", err)
+	}
+
+	runID, err := o.GetRunID()
+	if err != nil {
+		return nil, fmt.Errorf("error getting run id: %w", err)
+	}
+
 	return &jsonapi.Resource[*PlanResourceAttributes]{
-		ID:   o.PlanExternalID().String(),
+		ID:   planID.ExternalID(),
 		Type: "plans",
 		Attributes: &PlanResourceAttributes{
 			Status:     string(o.Status),
@@ -85,17 +106,22 @@ func (o TFEPlan) PlanResource() *jsonapi.Resource[*PlanResourceAttributes] {
 			"run": &jsonapi.Relationship{
 				Data: map[string]string{
 					"type": "runs",
-					"id":   o.RunExternalID().String(),
+					"id":   runID.ExternalID(),
 				},
 			},
 		},
-	}
+	}, nil
 }
 
-func (o TFEPlan) PlanDocument() *PlanDocument {
-	return &PlanDocument{
-		Data: o.PlanResource(),
+func (o TFEPlan) GetPlanDocument() (*PlanDocument, error) {
+	data, err := o.GetPlanResource()
+	if err != nil {
+		return nil, fmt.Errorf("error getting plan resource: %w", err)
 	}
+
+	return &PlanDocument{
+		Data: data,
+	}, err
 }
 
 type DefaultPlans struct {
@@ -108,20 +134,23 @@ func NewDefaultPlans(db TFEPlanDB) *DefaultPlans {
 	}
 }
 
-func (o *DefaultPlans) Read(ctx context.Context, planID string) (*PlanDocument, error) {
-	planExternalID := PlanExternalID(planID)
-	if err := planExternalID.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating plan id: %w", err)
+func (o *DefaultPlans) Read(ctx context.Context, planExternalID string) (*PlanDocument, error) {
+	planID, err := id.NewPlanIDFromExternalID(planExternalID)
+	if err != nil {
+		return nil, fmt.Errorf("error creating plan id: %w", err)
 	}
 
-	planInternalID := planExternalID.InternalID().String()
+	planInternalID := planID.InternalID()
 
 	row, err := o.db.GetTFEPlan(ctx, planInternalID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting tfe plan: %w", err)
 	}
 
-	resp := (TFEPlan)(row).PlanDocument()
+	resp, err := (TFEPlan)(row).GetPlanDocument()
+	if err != nil {
+		return nil, fmt.Errorf("error getting plan document: %w", err)
+	}
 
 	return resp, nil
 }

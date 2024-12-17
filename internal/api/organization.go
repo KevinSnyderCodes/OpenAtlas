@@ -118,5 +118,10 @@ func (o *DefaultOrganizations) ReadRunQueue(ctx context.Context, organization st
 		return nil, fmt.Errorf("error listing runs: %w", err)
 	}
 
-	return (*OrganizationReadRunQueueResponse)((TFERuns)(rows).RunListResponse()), nil
+	resp, err := (TFERuns)(rows).GetRunListResponse()
+	if err != nil {
+		return nil, fmt.Errorf("error getting run list response: %w", err)
+	}
+
+	return (*OrganizationReadRunQueueResponse)(resp), nil
 }

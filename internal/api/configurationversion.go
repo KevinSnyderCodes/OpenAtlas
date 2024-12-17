@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/db"
+	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/id"
 	"github.com/KevinSnyderCodes/OpenAtlas/internal/x/jsonapi"
 )
 
@@ -84,24 +85,34 @@ type TFEConfigurationVersionDB interface {
 
 type TFEConfigurationVersion db.TFEConfigurationVersion
 
-func (o TFEConfigurationVersion) ConfigurationVersionExternalID() StrongExternalID {
-	return ConfigurationVersionInternalID(o.ID).ExternalID()
+func (o TFEConfigurationVersion) ConfigurationVersionID() (id.ConfigurationVersionID, error) {
+	v, err := id.NewConfigurationVersionIDFromInternalID(o.ID)
+	if err != nil {
+		return v, fmt.Errorf("error creating configuration version id: %w", err)
+	}
+
+	return v, nil
 }
 
-func (o TFEConfigurationVersion) ConfigurationVersionDocument() *ConfigurationVersionDocument {
+func (o TFEConfigurationVersion) ConfigurationVersionDocument() (*ConfigurationVersionDocument, error) {
+	configurationVersionID, err := o.ConfigurationVersionID()
+	if err != nil {
+		return nil, fmt.Errorf("error getting configuration version id: %w", err)
+	}
+
 	return &ConfigurationVersionDocument{
 		Data: &jsonapi.Resource[*ConfigurationVersionResourceAttributes]{
-			ID:   o.ConfigurationVersionExternalID().String(),
+			ID:   configurationVersionID.ExternalID(),
 			Type: "configuration-versions",
 			Attributes: &ConfigurationVersionResourceAttributes{
 				AutoQueueRuns: o.AutoQueueRuns,
 				Speculative:   o.Speculative,
 				Provisional:   o.Provisional,
 				Status:        string(o.Status),
-				UploadURL:     fmt.Sprintf("https://localhost:8443/api/upload/%s", o.ConfigurationVersionExternalID().String()),
+				UploadURL:     fmt.Sprintf("https://localhost:8443/api/upload/%s", configurationVersionID.ExternalID()),
 			},
 		},
-	}
+	}, nil
 }
 
 type DefaultConfigurationVersions struct {
@@ -114,32 +125,33 @@ func NewDefaultConfigurationVersions(db TFEConfigurationVersionDB) *DefaultConfi
 	}
 }
 
-func (o *DefaultConfigurationVersions) Read(ctx context.Context, configurationVersionID string) (*ConfigurationVersionDocument, error) {
-	configurationVersionExternalID := ConfigurationVersionExternalID(configurationVersionID)
-	if err := configurationVersionExternalID.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating configuration version id: %w", err)
+func (o *DefaultConfigurationVersions) Read(ctx context.Context, configurationVersionExternalID string) (*ConfigurationVersionDocument, error) {
+	configurationVersionID, err := id.NewConfigurationVersionIDFromExternalID(configurationVersionExternalID)
+	if err != nil {
+		return nil, fmt.Errorf("error creating configuration version id: %w", err)
 	}
 
-	configurationVersionInternalID := configurationVersionExternalID.InternalID()
-
-	row, err := o.db.GetTFEConfigurationVersion(ctx, configurationVersionInternalID.String())
+	row, err := o.db.GetTFEConfigurationVersion(ctx, configurationVersionID.InternalID())
 	if err != nil {
 		return nil, fmt.Errorf("error getting configuration version by external id: %w", err)
 	}
 
-	resp := (TFEConfigurationVersion)(row).ConfigurationVersionDocument()
+	resp, err := (TFEConfigurationVersion)(row).ConfigurationVersionDocument()
+	if err != nil {
+		return nil, fmt.Errorf("error creating configuration version document: %w", err)
+	}
 
 	return resp, nil
 }
 
-func (o *DefaultConfigurationVersions) Create(ctx context.Context, workspaceID string, req *ConfigurationVersionCreateRequest) (*ConfigurationVersionDocument, error) {
-	workspaceExternalID := WorkspaceExternalID(workspaceID)
-	if err := workspaceExternalID.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating workspace id: %w", err)
+func (o *DefaultConfigurationVersions) Create(ctx context.Context, workspaceExternalID string, req *ConfigurationVersionCreateRequest) (*ConfigurationVersionDocument, error) {
+	workspaceID, err := id.NewWorkspaceIDFromExternalID(workspaceExternalID)
+	if err != nil {
+		return nil, fmt.Errorf("error creating workspace id: %w", err)
 	}
 
-	if workspaceID != defaultWorkspaceID {
-		return nil, fmt.Errorf("workspace not found: %s", workspaceID)
+	if workspaceID.ExternalID() != defaultWorkspaceID {
+		return nil, fmt.Errorf("workspace not found: %s", workspaceExternalID)
 	}
 
 	arg := db.CreateTFEConfigurationVersionParams{
@@ -154,18 +166,21 @@ func (o *DefaultConfigurationVersions) Create(ctx context.Context, workspaceID s
 		return nil, fmt.Errorf("error creating configuration version: %w", err)
 	}
 
-	resp := (TFEConfigurationVersion)(row).ConfigurationVersionDocument()
+	resp, err := (TFEConfigurationVersion)(row).ConfigurationVersionDocument()
+	if err != nil {
+		return nil, fmt.Errorf("error creating configuration version document: %w", err)
+	}
 
 	return resp, nil
 }
 
-func (o *DefaultConfigurationVersions) Upload(ctx context.Context, configurationVersionID string, r io.Reader) error {
-	configurationVersionExternalID := ConfigurationVersionExternalID(configurationVersionID)
-	if err := configurationVersionExternalID.Validate(); err != nil {
-		return fmt.Errorf("error validating configuration version id: %w", err)
+func (o *DefaultConfigurationVersions) Upload(ctx context.Context, configurationVersionExternalID string, r io.Reader) error {
+	configurationVersionID, err := id.NewConfigurationVersionIDFromExternalID(configurationVersionExternalID)
+	if err != nil {
+		return fmt.Errorf("error creating configuration version id: %w", err)
 	}
 
-	row, err := o.db.GetTFEConfigurationVersion(ctx, configurationVersionExternalID.InternalID().String())
+	row, err := o.db.GetTFEConfigurationVersion(ctx, configurationVersionID.InternalID())
 	if err != nil {
 		return fmt.Errorf("error getting configuration version by external id: %w", err)
 	}
