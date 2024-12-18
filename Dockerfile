@@ -6,6 +6,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o ./api ./cmd/api/main.go
+RUN go build -o ./openatlas ./cmd/openatlas/main.go
 
-CMD ["./api"]
+ENTRYPOINT [ "./openatlas" ]
